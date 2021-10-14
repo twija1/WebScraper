@@ -5,33 +5,32 @@ const express = require('express')
 
 const app = express()
 
-const urls = [
+const MibosportsUrls = [
     'https://www.mibosport.com/en/hudy-alu-nut-m4-black-10pcs',
     'https://www.mibosport.com/en/muchmore-fleta-zx-bearing-set-fr?bbResetZone=1&bbSetCurrency=EUR'
 ]
+const MiboClasses = '.add-to-cart-form .state'
 
-const classes = '.add-to-cart-form .state'
+const FCKITUrls = [
+    'https://fckit.pl/pl/p/SWEEP-RACING-Formula-X2/2395',
+    'https://fckit.pl/pl/p/1UP-RACING-3x6x0.25mm-Precision-Aluminum-Shims-Black-12pcs-/3029'
+]
+const fckitClasses = '.availability .second';
 
-const desiredText = 'in stock'
 
-const scrape = function (url, classes, desiredText) {
+const scrape = function (url, classes) {
 
     axios(url)
         .then(response => {
             const html = response.data
             const $ = cheerio.load(html)
-
-            $(classes, html).each(function () {
-                const tit = $(this).text()
-                if (tit.includes(desiredText))
-                    console.log('available', url)
-                else
-                    console.log('not available', url)
-            })
+            const result = $(classes, html).first().text()
+            console.log(result, url)
         }).catch(err => console.log(err))
 }
 
-urls.forEach(url => scrape(url, classes, desiredText))
+MibosportsUrls.forEach(url => scrape(url, MiboClasses))
+FCKITUrls.forEach(url => scrape(url, fckitClasses))
 
 
 app.listen(PORT, () => console.log(`server running on PORT ${PORT}`))
