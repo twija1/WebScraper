@@ -2,6 +2,8 @@ const PORT = 8000
 const axios = require('axios')
 const cheerio = require('cheerio')
 const express = require('express')
+const { MongoClient } = require('mongodb');
+require('dotenv').config()
 
 const app = express()
 
@@ -46,5 +48,14 @@ const scrape = function (url) {
 
 Urls.forEach(scrape)
 
+
+const uri = "mongodb+srv://process.env.DB_USER:<process.env.DB_PASS>@cluster0.2e1j4.mongodb.net/myFirstDatabase?retryWrites=true&w=majority";
+const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
+client.connect(err => {
+    const collection = client.db("test").collection("devices");
+    console.log("Connected correctly to server");
+    // perform actions on the collection object
+    client.close();
+});
 
 app.listen(PORT, () => console.log(`server running on PORT ${PORT}`))
