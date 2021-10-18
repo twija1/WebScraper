@@ -5,6 +5,7 @@ const express = require('express')
 const { MongoClient } = require('mongodb');
 require('dotenv').config()
 
+
 const app = express()
 
 const Urls = [
@@ -31,31 +32,62 @@ const siteRecognition = function (url) {
     return undefined
 }
 
-const scrape = function (url) {
+const scrape = async function (url) {
     const siteData = siteRecognition(url)
+    let result = ''
 
     if (siteData !== undefined) {
         const { classes } = siteData
-        axios(url)
+        result = await axios(url)
             .then(response => {
                 const html = response.data
                 const $ = cheerio.load(html)
                 const result = $(classes, html).first().text()
-                console.log(result, url)
-            }).catch(err => console.log(err))
-    } else console.log('Site is not included', url)
+                // console.log(result, url)
+                return result
+            }).catch(err => err)
+    } else {
+        result = 'Site is not included'
+    }
+    console.log(result, url)
+    return result
 }
 
 Urls.forEach(scrape)
 
+async function main(url) {
+    const uri = "mongodb+srv://process.env.DB_USER:<process.env.DB_PASS>@cluster0.2e1j4.mongodb.net/myFirstDatabase?retryWrites=true&w=majority"
+    const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true })
 
-const uri = "mongodb+srv://process.env.DB_USER:<process.env.DB_PASS>@cluster0.2e1j4.mongodb.net/myFirstDatabase?retryWrites=true&w=majority";
-const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
-client.connect(err => {
-    const collection = client.db("test").collection("devices");
-    console.log("Connected correctly to server");
-    // perform actions on the collection object
-    client.close();
-});
+    try {
+        await client.connect()
+        console.log("Connected correctly to server");
+
+        const db = client.db('scrapperDB')
+        const collection = db.collection('scraperData')
+
+        await createDocument(collection, url)
+    } catch (e) {
+        console.error(e)
+    } finally {
+        await client.close()
+    }
+}
+
+async function createDocument(collection, url) {
+
+    let scraperDocument = {
+        "url": 'https://www.mibosport.com/en/hudy-alu-nut-m4-black-10pcs',
+        "output": output,
+        "timeStamp": timeStamp
+    }
+
+    await collection.insertOne(scraperDocument)
+}
+
+async function findDocument(collection, url) {
+    const document = await collection.find({url}).toArray()
+    console.log(document)
+}
 
 app.listen(PORT, () => console.log(`server running on PORT ${PORT}`))
