@@ -24,6 +24,17 @@ const sitesData = {
     }
 }
 
+const timestampToDate = (timestamp) => {
+    const date = new Date(timestamp)
+    const result = 'Date: ' + date.getDate() +
+        '/' + (date.getMonth() + 1) +
+        '/' + (date.getFullYear()) +
+        ' ' + (date.getHours()) +
+        ':' + (date.getMinutes()) +
+        ':' + (date.getSeconds())
+    return result
+}
+
 const siteRecognition = function (url) {
     for (site in sitesData)
         if (url.includes(site))
@@ -73,7 +84,9 @@ app.get('/scrape', async (req, res) => {
             console.log(url)
             const output = await scrape(url)
             console.log(output)
-            return { output, url }
+            const timestamp = Date.now()
+            console.log(timestampToDate(timestamp))
+            return { output, url, timestamp }
         }))
     res.json(result)
 })
@@ -93,5 +106,8 @@ async function findDocument(collection, url) {
     const document = await collection.find({ url }).toArray()
     console.log(document)
 }
+
+
+
 
 app.listen(PORT, () => console.log(`server running on PORT ${PORT}`))
