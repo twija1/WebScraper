@@ -63,19 +63,36 @@ const scrape = async function (url) {
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.2e1j4.mongodb.net/myFirstDatabase?retryWrites=true&w=majority`
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true })
+let collection
 
 try {
     client.connect()
     console.log("Connected correctly to server");
 
-    // const db = client.db('scrapperDB')
-    // const collection = db.collection('scraperData')
+    const db = client.db('scrapperDB')
+    collection = db.collection('scraperData')
 
     // await createDocument(collection, url)
 } catch (e) {
     console.error(e)
 } finally {
     client.close()
+}
+
+function findDocument(url) {
+    return collection.find({url}).sort({ timestamp: -1}).limit(1).toArray()
+}
+
+
+function createDocument({ url, output, timestamp }) {
+
+    let scraperDocument = {
+        url,
+        output,
+        timestamp
+    }
+
+    return collection.insertOne(scraperDocument)
 }
 
 app.get('/scrape', async (req, res) => {
@@ -86,28 +103,14 @@ app.get('/scrape', async (req, res) => {
             console.log(output)
             const timestamp = Date.now()
             console.log(timestampToDate(timestamp))
+
+            // await createDocument({ url, output, timestamp })
+
+            findDocument(url).then(r => console.log(r))
+
             return { output, url, timestamp }
         }))
     res.json(result)
 })
-
-async function createDocument(collection, { url, output, timestamp }) {
-
-    let scraperDocument = {
-        url,
-        output,
-        timestamp
-    }
-
-    await collection.insertOne(scraperDocument)
-}
-
-async function findDocument(collection, url) {
-    const document = await collection.find({ url }).toArray()
-    console.log(document)
-}
-
-
-
 
 app.listen(PORT, () => console.log(`server running on PORT ${PORT}`))
