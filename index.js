@@ -10,28 +10,23 @@ const app = express()
 const Urls = [
     'https://www.mibosport.com/en/hudy-alu-nut-m4-black-10pcs',
     'https://www.mibosport.com/en/muchmore-fleta-zx-bearing-set-fr?bbResetZone=1&bbSetCurrency=EUR',
-    'https://fckit.pl/pl/p/SWEEP-RACING-Formula-X2/2395',
-    'https://fckit.pl/pl/p/1UP-RACING-3x6x0.25mm-Precision-Aluminum-Shims-Black-12pcs-/3029',
     'https://allegro.pl/oferta/kawa-ziarnista-costa-coffee-signature-blend-1kg-9857242214'
 ]
 
 const sitesData = {
     'mibosport': {
         classes: '.add-to-cart-form .state'
-    },
-    'fckit': {
-        classes: '.availability .second'
     }
 }
 
 const timestampToDate = (timestamp) => {
     const date = new Date(timestamp)
     const result = 'Date: ' + date.getDate() +
-        '/' + (date.getMonth() + 1) +
-        '/' + (date.getFullYear()) +
-        ' ' + (date.getHours()) +
-        ':' + (date.getMinutes()) +
-        ':' + (date.getSeconds())
+        '/' + ( date.getMonth() + 1 ) +
+        '/' + ( date.getFullYear() ) +
+        ' ' + ( date.getHours() ) +
+        ':' + ( date.getMinutes() ) +
+        ':' + ( date.getSeconds() )
     return result
 }
 
@@ -71,8 +66,6 @@ try {
 
     const db = client.db('scrapperDB')
     collection = db.collection('scraperData')
-
-    // await createDocument(collection, url)
 } catch (e) {
     console.error(e)
 } finally {
@@ -80,7 +73,7 @@ try {
 }
 
 function findDocument(url) {
-    return collection.find({url}).sort({ timestamp: -1}).limit(1).toArray()
+    return collection.find({ url }).sort({ timestamp: -1 }).limit(1).toArray().then(r => r[0])
 }
 
 
@@ -99,16 +92,20 @@ app.get('/scrape', async (req, res) => {
     const result = await Promise.all(
         Urls.map(async (url) => {
             console.log(url)
-            const output = await scrape(url)
-            console.log(output)
-            const timestamp = Date.now()
-            console.log(timestampToDate(timestamp))
+            const timeNow = Date.now()
+            console.log(timestampToDate(timeNow))
 
-            // await createDocument({ url, output, timestamp })
+            return findDocument(url).then(async ({ timestamp, output }) => {
+                const timeDif = timeNow - timestamp
 
-            findDocument(url).then(r => console.log(r))
-
-            return { output, url, timestamp }
+                if (timeDif < 15 * 60 * 1000)
+                    return { url, output, timestamp }
+                else {
+                    const output = await scrape(url)
+                    await createDocument({ url, output, timestamp: timeNow })
+                    return { url, output, timestamp: timeNow }
+                }
+            })
         }))
     res.json(result)
 })
