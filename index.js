@@ -15,19 +15,11 @@ const Urls = [
 
 const sitesData = {
     'mibosport': {
-        classes: '.add-to-cart-form .state'
+        classes: {
+            'Availability': '.add-to-cart-form .state',
+            'Price': '.product-prices .price-total'
+        }
     }
-}
-
-const timestampToDate = (timestamp) => {
-    const date = new Date(timestamp)
-    const result = 'Date: ' + date.getDate() +
-        '/' + ( date.getMonth() + 1 ) +
-        '/' + ( date.getFullYear() ) +
-        ' ' + ( date.getHours() ) +
-        ':' + ( date.getMinutes() ) +
-        ':' + ( date.getSeconds() )
-    return result
 }
 
 const siteRecognition = function (url) {
@@ -47,12 +39,28 @@ const scrape = async function (url) {
             .then(response => {
                 const html = response.data
                 const $ = cheerio.load(html)
-                const result = $(classes, html).first().text()
+                const result = Object.keys(classes).reduce((acc, key, index) => {
+                    const output = $(classes[key], html).first().text().trim()
+                    return {...acc, [key]: output}
+                }, {})
+                console.log(result)
                 return result
             }).catch(err => err)
     } else {
         result = 'Site is not included'
     }
+    return result
+}
+Urls.map(scrape)
+
+const timestampToDate = (timestamp) => {
+    const date = new Date(timestamp)
+    const result = 'Date: ' + date.getDate() +
+        '/' + ( date.getMonth() + 1 ) +
+        '/' + ( date.getFullYear() ) +
+        ' ' + ( date.getHours() ) +
+        ':' + ( date.getMinutes() ) +
+        ':' + ( date.getSeconds() )
     return result
 }
 
@@ -102,7 +110,8 @@ app.get('/scrape', async (req, res) => {
                     return { url, output, timestamp }
                 else {
                     const output = await scrape(url)
-                    await createDocument({ url, output, timestamp: timeNow })
+                    console.log(output)
+                    // await createDocument({ url, output, timestamp: timeNow })
                     return { url, output, timestamp: timeNow }
                 }
             })
