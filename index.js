@@ -43,12 +43,12 @@ const scrape = async function (url) {
                     const output = $(classes[key], html).first().text().trim()
                     return {...acc, [key]: output}
                 }, {})
-                console.log(result)
                 return result
             }).catch(err => err)
     } else {
-        result = 'Site is not included'
+        result = { Availability: 'Site is not included' }
     }
+    console.log(result)
     return result
 }
 Urls.map(scrape)
