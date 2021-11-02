@@ -16,8 +16,8 @@ const Urls = [
 const sitesData = {
     'mibosport': {
         classes: {
-            'Availability': '.add-to-cart-form .state',
-            'Price': '.product-prices .price-total'
+            'availability': '.add-to-cart-form .state',
+            'price': '.product-prices .price-total'
         }
     }
 }
@@ -41,12 +41,12 @@ const scrape = async function (url) {
                 const $ = cheerio.load(html)
                 const result = Object.keys(classes).reduce((acc, key, index) => {
                     const output = $(classes[key], html).first().text().trim()
-                    return {...acc, [key]: output}
+                    return { ...acc, [key]: output }
                 }, {})
                 return result
             }).catch(err => err)
     } else {
-        result = { Availability: 'Site is not included' }
+        result = { availability: 'Site is not included' }
     }
     console.log(result)
     return result
@@ -85,13 +85,7 @@ function findDocument(url) {
 }
 
 
-function createDocument({ url, output, timestamp }) {
-
-    let scraperDocument = {
-        url,
-        output,
-        timestamp
-    }
+function createDocument(scraperDocument) {
 
     return collection.insertOne(scraperDocument)
 }
@@ -110,9 +104,10 @@ app.get('/scrape', async (req, res) => {
                     return { url, output, timestamp }
                 else {
                     const output = await scrape(url)
-                    console.log(output)
-                    // await createDocument({ url, output, timestamp: timeNow })
-                    return { url, output, timestamp: timeNow }
+                    const scraperDocument = Object.entries(output).reduce((acc, [key, value]) =>
+                        ( { ...acc, [key]: value } ), { url, timestamp: timeNow })
+                    await createDocument(scraperDocument)
+                    return scraperDocument
                 }
             })
         }))
